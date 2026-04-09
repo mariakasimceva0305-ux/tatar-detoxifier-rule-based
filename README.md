@@ -1,22 +1,18 @@
-# tatar-detoxifier-rule-based
+# Tatar Detoxifier (Rule-Based)
 
-Educational rule-based detoxification pipeline for Tatar text.
+[Русская версия](#ru) | [English version](#en)
 
-## Project Scope
+## RU
 
-Deterministic text cleanup with dictionary and substring matching rules.
+### О проекте
+Детерминированный rule-based pipeline для очистки токсичных фрагментов в татарском тексте.
 
-## Repository Structure
+### Гипотезы
+1. Rule-based baseline обеспечивает прозрачность трансформаций.
+2. Token + substring правила повышают покрытие.
+3. Лексиконные фильтры стабилизируют качество.
 
-- `main.py`
-- `toxic_replacements.json`
-- `toxic_substrings.json`
-- `tat_Cyrl_twl.txt`
-- `tt_ru_lexicon.csv`
+## EN
 
-## Implemented Functionality
-
-- token-level replacement rules
-- substring-based filtering
-- lexicon-driven token removal
-- detoxified output generation in tabular format
+### Overview
+A deterministic rule-based detoxification pipeline for Tatar text moderation in low-resource settings.
