@@ -1,78 +1,200 @@
 # Tatar Detoxifier (Rule-Based)
 
-Deterministic rule-based detoxification pipeline for **Tatar text moderation** in a low-resource setting.
+Детерминированный rule-based pipeline для очистки токсичных фрагментов в татарском тексте в low-resource setting.
 
-## Why This Project
-Low-resource NLP often requires a different mindset. When annotated data, pretrained resources, and strong benchmark baselines are limited, a transparent rule-based system can be the right first step.
+Цель проекта — показать, как можно построить рабочий baseline для текстовой модерации и detoxification даже в условиях, где нет крупных размеченных датасетов, готовых моделей и устойчивой инфраструктуры для low-resource языка.
 
-This repository demonstrates that approach for Tatar text detoxification.
+---
 
-## Problem Statement
-Reduce toxic or unsafe fragments in Tatar-language text using a deterministic transformation pipeline.
+## Что делает проект
 
-## Approach
-The project combines:
-- substring-based toxic pattern detection
-- replacement dictionaries
-- lexicon support for filtering and normalization
-- deterministic transformation rules
+Система принимает татарский текст и выполняет rule-based detoxification:
 
-The main value here is not model complexity. It is **controllability, transparency, and fast iteration** in a low-resource setting.
+1. выявляет токсичные токены и подстроки;
+2. использует словарные и лексиконные ресурсы;
+3. применяет заранее заданные правила замены;
+4. возвращает более безопасную текстовую версию.
 
-## Repository Structure
+Проект демонстрирует подход, в котором прозрачность и управляемость важнее, чем сложность модели.
+
+---
+
+## Задача
+
+Для low-resource языков часто отсутствуют:
+
+- качественные размеченные корпуса;
+- готовые detoxification-модели;
+- сильные open-source baselines;
+- стабильные pretrained решения под нужный язык.
+
+В таких условиях rule-based pipeline — не “примитивный костыль”, а разумный стартовый baseline, который:
+
+- прозрачен;
+- воспроизводим;
+- легко дебажится;
+- позволяет быстро построить рабочий moderation layer.
+
+---
+
+## Основная идея
+
+Вместо того чтобы пытаться сразу обучить сложную модель на слабых данных, проект строит детерминированный пайплайн, который сочетает:
+
+- token-level rules;
+- substring-level matching;
+- словарные фильтры;
+- заранее заданные toxic-to-safe replacements.
+
+Такой дизайн особенно полезен там, где критичны объяснимость и быстрые итерации.
+
+---
+
+## Архитектура
+
 ```text
-main.py
-paper.pdf
-tat_Cyrl_twl.txt
-toxic_replacements.json
-toxic_substrings.json
-tt_ru_lexicon.csv
-README.md
+Входной татарский текст
+        │
+        ▼
+┌───────────────────────────────┐
+│ Text normalization            │
+│ - basic cleanup               │
+│ - canonical form prep         │
+└───────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────┐
+│ Rule matching                 │
+│ - token rules                 │
+│ - substring rules             │
+│ - toxic lexicon lookup        │
+└───────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────┐
+│ Replacement layer             │
+│ - safe substitutions          │
+│ - deterministic transforms    │
+└───────────────────────────────┘
+        │
+        ▼
+Очищенный / менее токсичный текст
 ```
 
-## Why Rule-Based Was a Reasonable Choice
-For this task, rule-based logic offers several benefits:
-- explainable transformations
-- no dependency on large labeled datasets
-- easy debugging of failure cases
-- good baseline for future supervised or hybrid systems
+---
 
-## Evaluation Mindset
-A project like this should be reviewed through:
-- coverage of toxic patterns
-- correctness of replacements
-- preservation of non-toxic content
-- interpretability of the transformation pipeline
+## Структура репозитория
 
-Useful reporting may include:
-- examples of successful detoxification
-- classes of remaining failure cases
-- precision / recall on a manually curated evaluation set
+```text
+├── main.py                  # основной исполняемый pipeline
+├── toxic_replacements.json  # словарь замен токсичных фрагментов
+├── toxic_substrings.json    # подстрочные правила и шаблоны
+├── tat_Cyrl_twl.txt         # словарный ресурс
+├── tt_ru_lexicon.csv        # лексикон
+├── paper.pdf                # описание / исследовательский контекст
+└── README.md
+```
 
-## Running Locally
+---
+
+## Почему rule-based baseline здесь уместен
+
+В low-resource NLP часто нет смысла сразу строить сложный neural pipeline. Rule-based baseline имеет практические преимущества:
+
+- полностью прозрачен и объясним;
+- легко редактируется доменным экспертом;
+- не требует дорогого обучения;
+- помогает быстро сформировать baseline для дальнейших ML-итераций;
+- позволяет собрать error taxonomy до обучения статистической модели.
+
+Для модерации и detoxification это особенно важно, потому что правила можно быстро адаптировать к новым типам токсичных выражений.
+
+---
+
+## Подход к качеству
+
+Даже rule-based система должна оцениваться системно. Здесь разумно смотреть на:
+
+- **coverage** — сколько токсичных кейсов покрывается;
+- **precision of replacement** — не ломает ли система нейтральный текст;
+- **consistency** — одинаково ли обрабатываются похожие паттерны;
+- **linguistic acceptability** — остается ли текст читаемым после замены.
+
+Для таких систем качественный error analysis и ручная валидация часто важнее одной агрегированной метрики.
+
+---
+
+## Ключевые инженерные решения
+
+### 1. Deterministic pipeline
+
+Каждое преобразование воспроизводимо и объяснимо. Это удобно для дебага и ручной проверки.
+
+### 2. Token + substring rules
+
+Разные формы токсичности проявляются по-разному: одни ловятся как отдельные токены, другие — как подстроки или вариации написания. Комбинация правил повышает покрытие.
+
+### 3. Lexicon-backed logic
+
+Использование лексиконных ресурсов делает пайплайн устойчивее, чем полностью ad-hoc набор правил.
+
+---
+
+## Как запустить
+
+### 1. Установка зависимостей
+
+Если зависимости не зафиксированы отдельно, достаточно стандартного Python-окружения:
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux / macOS
 python main.py
 ```
 
-## Where This Project Is Strong
-- low-resource NLP framing
-- pragmatic baseline construction
-- explicit lexical resources and rules
-- easy discussion of trade-offs in moderation systems
+Если позже появится `requirements.txt`, запуск лучше стандартизировать через него.
 
-## Suggested Next Improvements
-- add a small annotated evaluation set
-- classify toxic span categories explicitly
-- include before/after examples in the README
-- compare rule-based behavior against a lightweight learned baseline
-- package the transformation logic as a reusable module or API
+---
 
-## Limitations
-- rule-based systems need ongoing maintenance
-- linguistic variation can reduce coverage
-- aggressive substitutions may alter meaning if policy is not tuned carefully
+## Что важно уметь объяснить на интервью
 
-## Takeaway
-This repository is valuable because it reflects a real NLP engineering lesson: in low-resource settings, a strong transparent baseline is often more useful than pretending a complex model is justified too early.
+- почему для low-resource языка выбран rule-based baseline;
+- какие классы токсичности покрываются;
+- как различаются token-level и substring-level правила;
+- как проверять, что detoxification не разрушает смысл текста;
+- в какой момент стоит переходить от rule-based к ML/NLP модели;
+- как такой проект можно превратить в moderation component внутри сервиса.
+
+---
+
+## Ограничения
+
+- Rule-based detoxification ограничен заранее описанными паттернами.
+- Система может хуже работать на новых сленговых и контекстно-зависимых формах токсичности.
+- Без полноценных benchmark-данных сложно строго измерять качество.
+- Детоксикация по правилам не всегда сохраняет стиль и семантические нюансы исходного текста.
+
+---
+
+## Что можно улучшить дальше
+
+- собрать тестовый benchmark для ручной и автоматической оценки;
+- выделить категории токсичности и error taxonomy;
+- добавить unit-тесты на типовые кейсы;
+- упаковать пайплайн как API/service;
+- использовать rule-based систему как baseline для будущей ML-модели;
+- добавить human-in-the-loop review для сложных случаев.
+
+---
+
+## Технологии
+
+- Python
+- Rule-based NLP
+- Lexicon-based text processing
+- Low-resource language processing
+- Text moderation / detoxification
+
+---
+
+## Итог
+
+Этот проект показывает зрелый инженерный подход к low-resource NLP: сначала прозрачный и управляемый baseline, затем постепенное наращивание сложности. Для задач модерации и detoxification это часто более правильная стратегия, чем сразу переходить к тяжелым моделям без данных и без понятной системы оценки.
